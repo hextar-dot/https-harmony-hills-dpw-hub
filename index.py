@@ -26,8 +26,8 @@ def dpw_ai_bridge():
                 "Keep your responses concise, under 3 sentences, and localized to a municipal DPW environment."
             )
 
-            # Prepare the web request to Google's AI servers
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            # Updated secure endpoint path
+            url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
             
             # Format the prompt payload
             payload = {
@@ -36,10 +36,14 @@ def dpw_ai_bridge():
                 }]
             }
             
+            # Pass the API key securely inside the HTTP header rather than the URL string
             req = urllib.request.Request(
                 url, 
                 data=json.dumps(payload).encode('utf-8'), 
-                headers={'Content-Type': 'application/json'}
+                headers={
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': api_key
+                }
             )
             
             # Shoot the text over to Google and catch the AI response
