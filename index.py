@@ -14,7 +14,7 @@ def dpw_ai_bridge(path):
     message = data.get("message", "").strip()
 
     # 2. Grab the secret API Key from Vercel's environment settings
-    api_key = os.environ.get("GEMINI_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
 
     if not api_key:
         ai_response = "Error: Gemini API Key is missing in Vercel settings."
@@ -27,24 +27,20 @@ def dpw_ai_bridge(path):
                 "Keep your responses concise, under 3 sentences, and localized to a municipal DPW environment."
             )
 
-            # Updated secure endpoint path
-            url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+            # This is the exact verified structure for REST requests
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
             
-            # Format the prompt payload
+            # Format the prompt payload matching the Google API spec
             payload = {
                 "contents": [{
                     "parts": [{"text": f"{system_instruction}\n\nAvatar '{user_name}' asks: {message}"}]
                 }]
             }
             
-            # Pass the API key securely inside the HTTP header rather than the URL string
             req = urllib.request.Request(
                 url, 
                 data=json.dumps(payload).encode('utf-8'), 
-                headers={
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': api_key
-                }
+                headers={'Content-Type': 'application/json'}
             )
             
             # Shoot the text over to Google and catch the AI response
