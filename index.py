@@ -5,7 +5,7 @@ import json
 
 app = Flask(__name__)
 
-@app.route('/api', methods=['POST'])
+@app.route('/', methods=['POST'])
 def dpw_ai_bridge():
     # 1. Capture the data package from Second Life
     data = request.get_json(force=True, silent=True) or {}
