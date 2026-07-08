@@ -5,10 +5,8 @@ import json
 
 app = Flask(__name__)
 
-# This handles the main incoming traffic from your Second Life prim
 @app.route('/', methods=['POST', 'GET'])
 def dpw_ai_bridge():
-    # If a standard web browser hits the page, give it a quick status sign
     if request.method == 'GET':
         return "Harmony Hills DPW Hub Mainframe is online and operational."
 
@@ -26,13 +24,12 @@ def dpw_ai_bridge():
         "Our municipal fleet includes standard heavy utility vehicles, dump trucks, and street sweepers."
     )
 
-    # 3. If a key exists, attempt to run the request through Google Gemini's live brain
+    # 3. If a key exists, process it through Google Gemini's live brain
     if api_key:
         try:
-            # Verified production REST API endpoint for Gemini 1.5 Flash
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            # Updated to use the active gemini-3.5-flash model endpoint
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
             
-            # Simple, direct text package layout matching Google API specs
             payload = {
                 "contents": [{
                     "parts": [{
@@ -46,11 +43,14 @@ def dpw_ai_bridge():
                 }]
             }
             
-            # Pack up the message to safely travel down the pipeline
+            # Pack up the message with a standard User-Agent header to clear web firewalls
             req = urllib.request.Request(
                 url, 
                 data=json.dumps(payload).encode('utf-8'), 
-                headers={'Content-Type': 'application/json'}
+                headers={
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                }
             )
             
             # Deliver the prompt to Google and catch the generated response text
@@ -59,7 +59,7 @@ def dpw_ai_bridge():
                 ai_response = res_data['candidates'][0]['content']['parts'][0]['text'].strip()
 
         except Exception:
-            # If Google throws a 404 or a timeout, use a clean localized response instead of crashing
+            # Intelligent fallback matching keywords if Google times out
             if "truck" in message.lower() or "vehicle" in message.lower():
                 ai_response = "Harmony Hills DPW operates a variety of utility vehicles, including heavy dump trucks, leaf loaders, and backhoes for maintenance."
             elif "joke" in message.lower():
@@ -67,9 +67,8 @@ def dpw_ai_bridge():
             else:
                 ai_response = "Harmony Hills DPW Dispatch has logged your inquiry into our central asset queue.  An operator or crew will address it shortly."
 
-    # Clean sentence spacing rules required by Second Life text limitations (2 spaces after a period)
+    # Enforce Second Life text limitations (exactly 2 spaces after a period)
     sentences = [s.strip() for s in ai_response.replace('\n', ' ').split('.') if s.strip()]
     formatted_response = ".  ".join(sentences) + "." if sentences else ai_response
 
-    # 4. Return the finalized reply packet straight down to your Second Life object
     return jsonify({"reply": formatted_response})
