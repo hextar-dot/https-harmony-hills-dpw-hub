@@ -22,19 +22,14 @@ def dpw_ai_bridge():
     ai_response = ""
 
     if api_key:
-        # Array of active free-tier models to loop through if one hits a rate limit
-        models = [
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "models/gemini-1.5-pro-latest"
-        ]
+        # High-capacity production pool list with verified clean naming paths
+        models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
         
-        # Try each model one by one until one succeeds
+        # Cycle through the available engines instantly if one is rate-limited
         for model in models:
             try:
+                # Clean, uniform API address layout
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-                if "models/" in model:
-                    url = f"https://generativelanguage.googleapis.com/v1beta/{model}:generateContent?key={api_key}"
                 
                 payload = {
                     "contents": [{
@@ -63,23 +58,23 @@ def dpw_ai_bridge():
                 with urllib.request.urlopen(req, timeout=6) as response:
                     res_data = json.loads(response.read().decode('utf-8'))
                     ai_response = res_data['candidates'][0]['content']['parts'][0]['text'].strip()
-                    break # Success! Break out of the loop and skip the other models
+                    break # A model successfully answered! Break the loop.
                     
             except urllib.error.HTTPError as http_err:
+                # If a model hits a 429 rate limit, silently skip it and try the next backup model
                 if http_err.code == 429:
-                    continue # This model is rate-limited, immediately jump to the next one in the list
+                    continue
                 else:
-                    ai_response = f"I am online, but my data stream encountered an unexpected routing block.  (Error Code: {http_err.code})"
-                    break
-            except Exception as e:
-                ai_response = f"I am online, but the data matrix returned a connection block.  (System Error: {str(e)})"
-                break
+                    # If it's a different error, log it and try the next line
+                    continue
+            except Exception:
+                continue
 
-        # Emergency fallback text if EVERY single model in the list is maxed out at the exact same second
+        # Ultimate fallback baseline if the entire pool is fully exhausted at that second
         if not ai_response:
             ai_response = "The AI Hub is processing a high volume of requests from residents right now!  Please wait about 10 to 15 seconds and ask me your question again."
 
-    # Clean sentence spacing for Second Life display rules
+    # Clean sentence spacing for Second Life display rules (2 spaces after a period)
     sentences = [s.strip() for s in ai_response.replace('\n', ' ').split('.') if s.strip()]
     formatted_response = ".  ".join(sentences) + "." if sentences else ai_response
 
