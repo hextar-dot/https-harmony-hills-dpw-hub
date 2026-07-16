@@ -32,10 +32,10 @@ class handler(BaseHTTPRequestHandler):
                     "Keep your responses concise, under 3 sentences, and localized to a municipal DPW environment."
                 )
 
-                # Target the current, standard production model (gemini-2.0-flash)
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+                # Fix: Route via the standard unrestricted v1 endpoint using the latest stable model
+                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
                 
-                # Format payload cleanly
+                # Format payload cleanly using the absolute robust standard layout
                 payload = {
                     "contents": [{
                         "parts": [{"text": f"System Directive:\n{system_instruction}\n\nUser Question:\nAvatar '{user_name}' asks: {message}"}]
@@ -59,12 +59,12 @@ class handler(BaseHTTPRequestHandler):
                         if parts:
                             ai_response = parts[0].get('text', '').strip()
                         else:
-                            ai_response = "DPW Dispatch System idle. No response text was generated."
+                            ai_response = "DPW Dispatch System idle.  No response text was generated."
                     else:
-                        ai_response = "DPW Dispatch System idle. Processing stalled."
+                        ai_response = "DPW Dispatch System idle.  Processing stalled."
 
             except Exception as e:
-                ai_response = f"Database query timeout. Please re-submit your inquiry to DPW Dispatch. (Error: {str(e)})"
+                ai_response = f"Database query timeout.  Please re-submit your inquiry to DPW Dispatch.  (Error: {str(e)})"
 
         # Rule compliance check: Ensure exactly two spaces after every period.
         sentences = [s.strip() for s in ai_response.replace('\n', ' ').split('.') if s.strip()]
