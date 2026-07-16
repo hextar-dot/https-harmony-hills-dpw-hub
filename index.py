@@ -32,8 +32,8 @@ class handler(BaseHTTPRequestHandler):
                     "Keep your responses concise, under 3 sentences, and localized to a municipal DPW environment."
                 )
 
-                # Fix: Route via the standard unrestricted v1 endpoint using the latest stable model
-                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # Fixed URL path: Restored the required v1beta route
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 
                 # Format payload cleanly using the absolute robust standard layout
                 payload = {
