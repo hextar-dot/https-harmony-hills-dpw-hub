@@ -25,24 +25,21 @@ class handler(BaseHTTPRequestHandler):
             ai_response = "System Alert: No message content detected in the transmission."
         else:
             try:
-                # 3. Use systemInstruction properly in the Gemini API payload
+                # 3. Define the system instructions 
                 system_instruction = (
                     "You are the automated AI dispatcher for the Harmony Hills Department of Public Works (DPW) "
                     "in Second Life. You are helpful, professional, and knowledgeable about municipal operations. "
                     "Keep your responses concise, under 3 sentences, and localized to a municipal DPW environment."
                 )
 
-                # Use v1beta or v1 endpoint
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # Target the current, standard production model (gemini-2.0-flash)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
                 
-                # Correct API structure: Pass instructions in 'systemInstruction' rather than appending to prompt
+                # Format payload cleanly
                 payload = {
                     "contents": [{
-                        "parts": [{"text": f"Avatar '{user_name}' asks: {message}"}]
-                    }],
-                    "systemInstruction": {
-                        "parts": [{"text": system_instruction}]
-                    }
+                        "parts": [{"text": f"System Directive:\n{system_instruction}\n\nUser Question:\nAvatar '{user_name}' asks: {message}"}]
+                    }]
                 }
                 
                 req = urllib.request.Request(
@@ -51,29 +48,29 @@ class handler(BaseHTTPRequestHandler):
                     headers={'Content-Type': 'application/json'}
                 )
                 
-                # Shoot the text over to Google with a defined timeout (essential for LSL and Vercel)
+                # Contact Google with a 10-second safety timeout
                 with urllib.request.urlopen(req, timeout=10) as response:
                     res_data = json.loads(response.read().decode('utf-8'))
                     
-                    # Safely dig out the response text
+                    # Extract the reply text safely
                     candidates = res_data.get('candidates', [])
                     if candidates and 'content' in candidates[0]:
                         parts = candidates[0]['content'].get('parts', [])
                         if parts:
                             ai_response = parts[0].get('text', '').strip()
                         else:
-                            ai_response = "DPW Dispatch System idle. No content was generated."
+                            ai_response = "DPW Dispatch System idle. No response text was generated."
                     else:
                         ai_response = "DPW Dispatch System idle. Processing stalled."
 
             except Exception as e:
                 ai_response = f"Database query timeout. Please re-submit your inquiry to DPW Dispatch. (Error: {str(e)})"
 
-        # Rule compliance: Format to exactly two spaces after every period.
+        # Rule compliance check: Ensure exactly two spaces after every period.
         sentences = [s.strip() for s in ai_response.replace('\n', ' ').split('.') if s.strip()]
         formatted_response = ".  ".join(sentences) + "." if sentences else ai_response
 
-        # 4. Return the payload to Second Life
+        # 4. Return response package to Second Life
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
